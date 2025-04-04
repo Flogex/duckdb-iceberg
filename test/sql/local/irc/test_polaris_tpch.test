@@ -1,4 +1,4 @@
-# name: test/sql/local/irc/test_polaris.test
+# name: test/sql/local/irc/test_polaris_tpch.test
 # description: test integration with iceberg catalog read
 # group: [irc]
 
@@ -18,6 +18,8 @@ require iceberg
 
 require aws
 
+require tpch
+
 statement ok
 create secret polaris_secret (
   TYPE S3,
@@ -32,18 +34,23 @@ attach 'quickstart_catalog' as my_datalake (
 );
 
 statement ok
-show all tables;
+use my_datalake.default;
 
-# tables may be added, we just want to make sure we are accurately getting the information
+# FIXME: run smaller scale with full dataset
+loop i 1 9
+
 query I
-select count(*) > 0 from (show all tables);
+PRAGMA tpch(${i})
 ----
-true
+<FILE>:duckdb/extension/tpch/dbgen/answers/sf1/q0${i}.csv
 
-query II
-select * from my_datalake.COLLADO_TEST.quickstart_table;
+endloop
+
+loop i 10 23
+
+query I
+PRAGMA tpch(${i})
 ----
-1	some data
-2	more data
-3	yet more data
+<FILE>:duckdb/extension/tpch/dbgen/answers/sf1/q${i}.csv
 
+endloop
